@@ -1,0 +1,6 @@
+# Node.js packages
+node_modules/
+
+# Python files
+*.pyc
+__pycache__/
