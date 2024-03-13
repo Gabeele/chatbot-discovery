@@ -1,3 +1,5 @@
+
+import pandas as pd
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -6,18 +8,36 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import json
 
+# Download necessary NLTK datasets
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
+
+
+def initialize():
+    
+    # Initialize the stopwords
+    stop_words = set(stopwords.words('english'))
+
+    # Load the intents file
+    intents_df = pd.read_csv('intent.csv')
+    intents_df.head()
+
+
+
+def preprocess_input(user_input):
+
+    lemmatizer = WordNetLemmatizer()
+    tokens = nltk.word_tokenize(user_input.lower())
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens if token.isalpha() and token not in stop_words]
+    return ' '.join(lemmatized_tokens)
+
 def classify_response(response):
-    """
-    Classify the response as 'yes' or 'no' based on sentiment analysis.
-    This is a simplistic approach and might need adjustments for better accuracy.
-    """
+
     sia = SentimentIntensityAnalyzer()
     score = sia.polarity_scores(response)
-    # Basic classification based on compound score; you might need to adjust the thresholds
-    if score['compound'] > 0:
-        return 'yes'
-    else:
-        return 'no'
+    return 'yes' if score['compound'] > 0 else 'no'
 
 def request():
     maintenance_request = {}
@@ -85,92 +105,24 @@ def request():
     else:
         print("Please start over and correct the necessary information.")
 
+def generate_response(user_input):
 
-# Download necessary NLTK datasets
-nltk.download('punkt')
-nltk.download('wordnet')
-nltk.download('stopwords')
-nltk.download('vader_lexicon')
+    processed_input = preprocess_input(user_input)
 
-# Initialize the stopwords
-stop_words = set(stopwords.words('english'))
+    identified_intent = None
+    for _, row in intents_df.iterrows():
+        if row['keywords'].lower() in processed_input:
+            identified_intent = row['intent']
+            break
+        
+    print(identified_intent)
 
-def preprocess_input(user_input):
-    lemmatizer = WordNetLemmatizer()
-    # Tokenize and lower case
-    tokens = nltk.word_tokenize(user_input.lower())
-    # Remove stopwords and punctuation, and lemmatize
-    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens if token.isalpha() and token not in stop_words]
-    return ' '.join(lemmatized_tokens)
-
-def generate_response(user_input, corpus, tfidf_vectorizer, tfidf_matrix):
-    user_input = preprocess_input(user_input)
-    if not user_input:  # Check if user_input is empty after preprocessing
-        return "I'm not sure how to respond to that."
-    user_input_vector = tfidf_vectorizer.transform([user_input])
-    similarities = cosine_similarity(user_input_vector, tfidf_matrix)
-    max_similarity = similarities.max()
-    if max_similarity < 0.1:  # Similarity threshold
-        return "I'm not sure I understand. Could you rephrase?"
-    max_similarity_index = similarities.argmax()
-    return corpus[max_similarity_index]
-
-corpus = [
-    'Hello! How can I assist you today?',
-    'I’m doing well, thank you! How can I assist you?',
-    'My name is ChatBot, your virtual assistant. How can I help you?',
-    'Why did the chicken cross the road? To get to the other side!',
-    'Goodbye! Feel free to return if you have more questions.',
-    'Currently, I can’t provide real-time weather updates. Please check a reliable weather service.',
-    'For restaurant recommendations, I suggest checking out local review sites like Yelp or Google Reviews.',
-    'You can contact customer support by emailing support@example.com or calling 1-800-123-4567.',
-    'I’m not updated with the latest news, but checking a news website or app can provide you with the latest information.',
-    'The meaning of life is a philosophical question concerning the significance of life or existence in general. It has been debated throughout history.',
-    # New responses for expanded interactions
-    'Okay, let me check that for you.',
-    'What would you like me to check on?'
-    'Could you specify a bit more?',
-    'Is there anything else I can help you with?',
-    'Glad I could help! Have a great day!',
-    'I’m not sure I understand. Could you provide more details?',
-    'That’s an interesting question. While I don’t have a personal opinion, many believe...',
-]
-corpus += [
-    # Maintenance requests and responses
-    'To report a maintenance issue, please provide me with the details of the problem.',
-    'What type of maintenance issue are you experiencing? Plumbing, electrical, HVAC, or something else?',
-    'Please describe the maintenance issue in as much detail as possible.',
-    'Have you experienced this issue before, or is this the first time?',
-    'Could you tell me the location of the issue within your apartment?',
-    'For emergency maintenance requests, please call our 24/7 maintenance hotline at 1-800-555-1234 immediately.',
-    'I have logged your maintenance request. Our maintenance team will contact you within 24 hours to schedule a repair.',
-    'If you have any photos of the issue, please email them to maintenance@example.com with your apartment number in the subject line.',
-    'Is there a preferred time for our maintenance team to visit your apartment for the repair?',
-    'Thank you for reporting the maintenance issue. Your comfort and safety are our top priorities.',
-    'If you have reported a maintenance issue, would you like a follow-up call to ensure everything is resolved to your satisfaction?',
-    'Please provide your contact details so our maintenance team can reach out to you directly.',
-    'If this is an update to an existing maintenance request, could you please provide the previous request number or details?',
-    'Are there any additional details or specific requests you would like to add about the maintenance issue?',
-    'Rest assured, all maintenance requests are treated with urgency. We appreciate your patience as we work to resolve your issue.',
-    'For non-urgent maintenance requests, please note our team addresses these during regular business hours, Monday to Friday, 9 AM to 5 PM.',
-    'Your maintenance request has been successfully submitted. Would you like assistance with anything else today?'
-]
-
-tfidf_vectorizer = TfidfVectorizer(ngram_range=(1, 2))
-tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
-
-print("Chatbot: Hello! How can I assist you?")
-
-# Chatbot interaction loop
-while True:
-    user_input = input("User: ").strip()
-    if user_input.lower() == 'goodbye':
-        print("Chatbot: Goodbye!")
-        break
-
-    if "maintenance" in user_input.lower() or "repair" in user_input.lower():
-        request()  
+    if identified_intent == "maintenance":
+        request()
+        return "Thank you!"
+    elif identified_intent == "greeting":
+        return "Hello! How can I help you today?"
+    elif identified_intent:
+        return "Intent identified: " + identified_intent
     else:
-        response = generate_response(user_input, corpus, tfidf_vectorizer, tfidf_matrix)
-        print("Chatbot:", response)
-
+        return "Sorry, I didn't understand that. Can you try rephrasing?"

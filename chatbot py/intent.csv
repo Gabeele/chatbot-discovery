@@ -1,0 +1,15 @@
+﻿keywords,intent
+"hi, hello, hey, good morning, good evening, greetings",Greeting
+"bye, goodbye, farewell, see you, take care",Farewell
+"need help, assist me, support, can you, how to, question, inquire",Asking for Assistance
+"maintenance, fix, broken, repair, issue, problem, leak, outage, not working, stopped, damage, emergency, urgent",Maintenance Request
+"information, details, info, recommend, suggest, guide, how do I find, what is, explain, summary, advice, tips",Information Provisioning
+"schedule, appointment, available, when, time, date",Scheduling Assistance
+"update, status, follow up, progress, what happened, any news",Request Update
+"report, complaint, issue, problem, concern",Report Issue
+"feedback, suggestion, idea, comment, improvement",Provide Feedback
+"contact, reach, talk to, email, phone number, call",Contact Information
+"login, access, account, password, sign in, register",Account Assistance
+"payment, charge, bill, rent, fee, dues, pay",Payment Inquiry
+"amenities, service, facility, access, availability",Amenities Information
+"policy, rules, guidelines, terms",Policy Information
